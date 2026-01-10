@@ -1,2 +1,2 @@
-value = input('Введите число')
+value = input('Введите целочисленное число')
 peint(value * value)
