@@ -1,0 +1,1 @@
+# Farmers Market CLI v1.0## Исполняемые файлыfarmers_market/├── Windows/│   └── FarmersMarket.exe## Запуск Windows1. Распакуйте архив2. Двойной клик по файлу dist/FM_app.exe3. Откроется консольное приложение
