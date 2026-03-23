@@ -1,0 +1,18 @@
+farmers_markets=# \dt
+                List of tables
+ Schema |      Name       | Type  |   Owner    
+--------+-----------------+-------+------------
+ public | addresses       | table | nadya_urba
+ public | cities          | table | nadya_urba
+ public | contacts        | table | nadya_urba
+ public | counties        | table | nadya_urba
+ public | market_products | table | nadya_urba
+ public | market_seasons  | table | nadya_urba
+ public | market_services | table | nadya_urba
+ public | markets         | table | nadya_urba
+ public | products        | table | nadya_urba
+ public | reviews         | table | nadya_urba
+ public | services        | table | nadya_urba
+ public | states          | table | nadya_urba
+ public | zip_codes       | table | nadya_urba
+(13 rows)
