@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+
 """
 Created on Sat Feb 28 20:35:04 2026
 
@@ -69,17 +71,15 @@ def cmd_zip():
             break
         view.print_required_field()
     while True:
-        miles_input = input('Мили: ').strip()
-        try:
-            miles = float(miles_input)
+        miles = input('Мили: ').strip()
+        if miles:
             break
-        except ValueError:
-            view.print_ValueError() 
+        view.print_required_field()
         
     gen.get_zip_radius(zip_code, miles)
 
 def cmd_sort():
-    count = int(input('Вывести первые: '))
+    count = int(input('Вывести по убыванию рейтинга первые: '))
     gen.sort_by_rating(count)
 
 def cmd_review():
@@ -110,10 +110,10 @@ def cmd_review():
     gen.add_review(fmid, name, rating, text)
 
 def cmd_del():
-    view.print_intro_del()
-    fmid = input('fmid: ')
-    confirm = input("УДАЛИТЬ? (yes/no): ").strip().lower()
-    if confirm in ['yes']:
+    view.дшые()
+    fmid = input('fmid: ');
+    confirm = input("УДАЛИТЬ? (да/нет): ").strip().lower()
+    if confirm in ['да']:
         gen.delete_market(fmid)
     else:
         view.print_cancl()
