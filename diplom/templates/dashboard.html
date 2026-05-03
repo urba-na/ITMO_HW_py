@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .tickets-table {
+        font-size: 0.82rem;
+    }
+
+    .tickets-table th,
+    .tickets-table td {
+        padding: 0.35rem 0.45rem;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .tickets-table thead th {
+        font-size: 0.78rem;
+    }
+
+    .tickets-table .form-control,
+    .tickets-table .form-select {
+        font-size: 0.78rem;
+        min-width: 90px;
+        padding: 0.2rem 0.35rem;
+    }
+
+    .tickets-table .col-id {
+        min-width: 70px;
+    }
+
+    .tickets-table .col-title {
+        min-width: 180px;
+    }
+
+    .tickets-table .col-category {
+        min-width: 140px;
+    }
+
+    .tickets-table .col-priority,
+    .tickets-table .col-status,
+    .tickets-table .col-sla-status {
+        min-width: 120px;
+    }
+
+    .tickets-table .col-author,
+    .tickets-table .col-assigned {
+        min-width: 120px;
+    }
+
+    .tickets-table .col-sla {
+        min-width: 120px;
+    }
+
+    .tickets-table .col-deadline,
+    .tickets-table .col-created {
+        min-width: 145px;
+    }
+
+    .tickets-table .col-left {
+        min-width: 120px;
+    }
+
+    .tickets-table a {
+        text-decoration: none;
+    }
+
+    .tickets-table .badge {
+        font-size: 0.72rem;
+        white-space: nowrap;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2>Список заявок</h2>
+        <p class="mb-0">Пользователь: {{ user.username }}</p>
+    </div>
+    <a href="{{ url_for('create_ticket') }}" class="btn btn-success">Создать заявку</a>
+</div>
+
+<form method="get" id="filterForm">
+    <div class="row g-2 mb-3">
+        <div class="col-md-3">
+            <label for="sort_by" class="form-label mb-1">Сортировать по</label>
+            <select name="sort_by" id="sort_by" class="form-select form-select-sm filter-input">
+                <option value="created_at" {% if request.args.get('sort_by', 'created_at') == 'created_at' %}selected{% endif %}>Дате</option>
+                <option value="id" {% if request.args.get('sort_by') == 'id' %}selected{% endif %}>ID</option>
+                <option value="title" {% if request.args.get('sort_by') == 'title' %}selected{% endif %}>Теме</option>
+                <option value="status" {% if request.args.get('sort_by') == 'status' %}selected{% endif %}>Статусу</option>
+                <option value="priority" {% if request.args.get('sort_by') == 'priority' %}selected{% endif %}>Приоритету</option>
+                <option value="category" {% if request.args.get('sort_by') == 'category' %}selected{% endif %}>Категории</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="sort_dir" class="form-label mb-1">Порядок</label>
+            <select name="sort_dir" id="sort_dir" class="form-select form-select-sm filter-input">
+                <option value="desc" {% if request.args.get('sort_dir', 'desc') == 'desc' %}selected{% endif %}>По убыванию</option>
+                <option value="asc" {% if request.args.get('sort_dir') == 'asc' %}selected{% endif %}>По возрастанию</option>
+            </select>
+        </div>
+
+        <div class="col-md-3 d-flex align-items-end">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm w-100">Сбросить фильтры</a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover table-sm align-middle tickets-table">
+            <thead>
+                <tr>
+                    <th class="col-id">ID</th>
+                    <th class="col-title">Тема</th>
+                    <th class="col-category">Категория</th>
+                    <th class="col-priority">Приоритет</th>
+                    <th class="col-author">Автор</th>
+                    <th class="col-assigned">Назначено</th>
+                    <th class="col-status">Статус</th>
+                    <th class="col-created">Дата</th>
+                    <th class="col-deadline">Дедлайн</th>
+                    <th class="col-sla-status">SLA-статус</th>
+                    <th class="col-sla">SLA</th>
+                    <th class="col-left">До просрочки</th>
+                </tr>
+                <tr>
+                    <th class="col-id">
+                        <input type="text" name="ticket_id" class="form-control form-control-sm filter-input"
+                               value="{{ request.args.get('ticket_id', '') }}" placeholder="ID">
+                    </th>
+                    <th class="col-title">
+                        <input type="text" name="title" class="form-control form-control-sm filter-input"
+                               value="{{ request.args.get('title', '') }}" placeholder="Тема">
+                    </th>
+                    <th class="col-category">
+                        <select name="category" class="form-select form-select-sm filter-input">
+                            <option value="">Все</option>
+                            {% for category in CATEGORIES %}
+                                <option value="{{ category }}" {% if request.args.get('category') == category %}selected{% endif %}>
+                                    {{ category }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </th>
+                    <th class="col-priority">
+                        <select name="priority" class="form-select form-select-sm filter-input">
+                            <option value="">Все</option>
+                            {% for priority in PRIORITIES %}
+                                <option value="{{ priority }}" {% if request.args.get('priority') == priority %}selected{% endif %}>
+                                    {{ priority }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </th>
+                    <th class="col-author">
+                        <input type="text" name="author" class="form-control form-control-sm filter-input"
+                               value="{{ request.args.get('author', '') }}" placeholder="Автор">
+                    </th>
+                    <th class="col-assigned">
+                        <input type="text" name="assigned_to" class="form-control form-control-sm filter-input"
+                               value="{{ request.args.get('assigned_to', '') }}" placeholder="Назначено">
+                    </th>
+                    <th class="col-status">
+                        <select name="status" class="form-select form-select-sm filter-input">
+                            <option value="">Все</option>
+                            {% for status in STATUSES %}
+                                <option value="{{ status }}" {% if request.args.get('status') == status %}selected{% endif %}>
+                                    {{ status }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </th>
+                    <th class="col-created">
+                        <input type="text" name="created_at" class="form-control form-control-sm filter-input"
+                               value="{{ request.args.get('created_at', '') }}" placeholder="2026-04-11">
+                    </th>
+                    <th class="col-deadline">
+                        <input type="text" name="deadline" class="form-control form-control-sm filter-input"
+                               value="{{ request.args.get('deadline', '') }}" placeholder="2026-05-03">
+                    </th>
+                    <th class="col-sla-status">
+                        <input type="text" name="sla_state" class="form-control form-control-sm filter-input"
+                               value="{{ request.args.get('sla_state', '') }}" placeholder="В срок">
+                    </th>
+                    <th class="col-sla">
+                        <input type="text" name="sla" class="form-control form-control-sm filter-input"
+                               value="{{ request.args.get('sla', '') }}" placeholder="SLA">
+                    </th>
+                    <th class="col-left">
+                        <input type="text" name="time_left" class="form-control form-control-sm filter-input"
+                               value="{{ request.args.get('time_left', '') }}" placeholder="3 ч">
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('ticket_detail', ticket_id=ticket.id) }}">
+                            {{ ticket.id }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('ticket_detail', ticket_id=ticket.id) }}">
+                            {{ ticket.title }}
+                        </a>
+                    </td>
+                    <td>{{ ticket.category }}</td>
+                    <td>{{ ticket.priority }}</td>
+                    <td>{{ ticket.author.username }}</td>
+                    <td>
+                        {% if ticket.assignee %}
+                            {{ ticket.assignee.username }}
+                        {% else %}
+                            Не назначено
+                        {% endif %}
+                    </td>
+                    <td>{{ ticket.status }}</td>
+                    <td>{{ ticket.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                    <td>
+                        {% if ticket.resolution_deadline %}
+                            {{ ticket.resolution_deadline.strftime('%d.%m.%Y %H:%M') }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ticket.sla_state == 'Просрочена' %}
+                            <span class="badge bg-danger">{{ ticket.sla_state }}</span>
+                        {% elif ticket.sla_state == 'На грани SLA' %}
+                            <span class="badge bg-warning text-dark">{{ ticket.sla_state }}</span>
+                        {% elif ticket.sla_state == 'В срок' %}
+                            <span class="badge bg-success">{{ ticket.sla_state }}</span>
+                        {% elif ticket.sla_state == 'Закрыта с нарушением' %}
+                            <span class="badge bg-danger">{{ ticket.sla_state }}</span>
+                        {% elif ticket.sla_state == 'Закрыта в срок' %}
+                            <span class="badge bg-primary">{{ ticket.sla_state }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ ticket.sla_state }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ticket.sla %}
+                            {{ ticket.sla.name }}
+                        {% else %}
+                            Не назначено
+                        {% endif %}
+                    </td>
+                    <td>{{ ticket.time_left_text }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</form>
+
+<script>
+    const form = document.getElementById('filterForm');
+    const inputs = document.querySelectorAll('.filter-input');
+    let timer;
+
+    inputs.forEach(input => {
+        input.addEventListener('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(() => form.submit(), 400);
+        });
+
+        input.addEventListener('change', function () {
+            form.submit();
+        });
+    });
+</script>
+{% endblock %}

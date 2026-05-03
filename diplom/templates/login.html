@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Вход</h2>
+
+{% if message %}
+<div class="alert alert-warning">
+    {{ message }}
+</div>
+{% endif %}
+
+<form method="post">
+    <div class="mb-3">
+        <label class="form-label">Логин</label>
+        <input type="text" name="username" class="form-control">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Пароль</label>
+        <input type="password" name="password" class="form-control">
+    </div>
+    <button type="submit" class="btn btn-primary">Войти</button>
+</form>
+
+<div class="mt-3">
+    <span>Нет аккаунта?</span>
+    <a href="{{ url_for('register') }}">Зарегистрироваться</a>
+</div>
+{% endblock %}

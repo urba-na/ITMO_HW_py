@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Заявка #{{ ticket.id }}</h2>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Назад</a>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="{% if current_user.role in ['admin', 'engineer'] %}col-lg-8{% else %}col-12{% endif %}">
+        <div class="card h-100">
+            <div class="card-header pb-0">
+                <ul class="nav nav-tabs card-header-tabs" id="ticketTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active"
+                                id="info-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#info-pane"
+                                type="button"
+                                role="tab"
+                                aria-controls="info-pane"
+                                aria-selected="true">
+                            Информация о заявке
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link"
+                                id="sla-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#sla-pane"
+                                type="button"
+                                role="tab"
+                                aria-controls="sla-pane"
+                                aria-selected="false">
+                            SLA
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link"
+                                id="history-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#history-pane"
+                                type="button"
+                                role="tab"
+                                aria-controls="history-pane"
+                                aria-selected="false">
+                            История
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card-body">
+                <div class="tab-content" id="ticketTabsContent">
+
+                    <div class="tab-pane fade show active" id="info-pane" role="tabpanel" aria-labelledby="info-tab" tabindex="0">
+                        <h4 class="mb-3">{{ ticket.title }}</h4>
+
+                        <p><strong>Описание:</strong> {{ ticket.description }}</p>
+                        <p><strong>Категория:</strong> {{ ticket.category }}</p>
+                        <p><strong>Приоритет:</strong> {{ ticket.priority }}</p>
+                        <p><strong>Статус заявки:</strong> {{ ticket.status }}</p>
+
+                        {% if ticket.author %}
+                            <p><strong>Автор:</strong> {{ ticket.author.username }}</p>
+                        {% endif %}
+
+                        {% if ticket.assignee %}
+                            <p><strong>Исполнитель:</strong> {{ ticket.assignee.username }}</p>
+                        {% else %}
+                            <p><strong>Исполнитель:</strong> не назначен</p>
+                        {% endif %}
+
+                        {% if ticket.created_at %}
+                            <p><strong>Создана:</strong> {{ ticket.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                        {% endif %}
+
+                        {% if ticket.resolved_at %}
+                            <p><strong>Закрыта:</strong> {{ ticket.resolved_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="tab-pane fade" id="sla-pane" role="tabpanel" aria-labelledby="sla-tab" tabindex="0">
+                        <h4 class="mb-3">SLA-метрики</h4>
+
+                        <p>
+                            <strong>SLA:</strong>
+                            {% if ticket.sla %}
+                                {{ ticket.sla.name }}
+                            {% else %}
+                                Не назначено
+                            {% endif %}
+                        </p>
+
+                        <p>
+                            <strong>Время реакции:</strong>
+                            {% if ticket.sla %}
+                                {{ ticket.sla.response_hours }} ч
+                            {% else %}
+                                —
+                            {% endif %}
+                        </p>
+
+                        <p>
+                            <strong>Время решения:</strong>
+                            {% if ticket.sla %}
+                                {{ ticket.sla.resolution_hours }} ч
+                            {% else %}
+                                —
+                            {% endif %}
+                        </p>
+
+                        <p>
+                            <strong>Дедлайн:</strong>
+                            {% if ticket.resolution_deadline %}
+                                {{ ticket.resolution_deadline.strftime('%d.%m.%Y %H:%M') }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </p>
+
+                        <p><strong>До просрочки:</strong> {{ ticket.time_left_text }}</p>
+
+                        <p>
+                            <strong>SLA-статус:</strong>
+                            {% if ticket.sla_state == 'Просрочена' %}
+                                <span class="badge bg-danger">{{ ticket.sla_state }}</span>
+                            {% elif ticket.sla_state == 'На грани SLA' %}
+                                <span class="badge bg-warning text-dark">{{ ticket.sla_state }}</span>
+                            {% elif ticket.sla_state == 'В срок' %}
+                                <span class="badge bg-success">{{ ticket.sla_state }}</span>
+                            {% elif ticket.sla_state == 'Закрыта с нарушением' %}
+                                <span class="badge bg-danger">{{ ticket.sla_state }}</span>
+                            {% elif ticket.sla_state == 'Закрыта в срок' %}
+                                <span class="badge bg-primary">{{ ticket.sla_state }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ ticket.sla_state }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="tab-pane fade" id="history-pane" role="tabpanel" aria-labelledby="history-tab" tabindex="0">
+                        <h4 class="mb-3">История изменений</h4>
+
+                        {% if history %}
+                            {% for item in history %}
+                                <div class="border rounded p-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <strong>
+                                            {% if item.user %}
+                                                {{ item.user.username }}
+                                            {% else %}
+                                                Система
+                                            {% endif %}
+                                        </strong>
+
+                                        {% if item.created_at %}
+                                            <small class="text-muted">{{ item.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                                        {% endif %}
+                                    </div>
+
+                                    <div>
+                                        {% if item.field == 'create' %}
+                                            Создана заявка
+                                        {% elif item.field == 'status' %}
+                                            Изменён статус: <strong>{{ item.old_value or '—' }}</strong> → <strong>{{ item.new_value or '—' }}</strong>
+                                        {% elif item.field == 'assigned_to' %}
+                                            Изменён исполнитель: <strong>{{ item.old_value or 'не назначен' }}</strong> → <strong>{{ item.new_value or 'не назначен' }}</strong>
+                                        {% elif item.field == 'sla' %}
+                                            Назначено SLA: <strong>{{ item.new_value }}</strong>
+                                        {% else %}
+                                            Изменено поле <strong>{{ item.field }}</strong>: {{ item.old_value or '—' }} → {{ item.new_value or '—' }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted mb-0">История изменений пока отсутствует.</p>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if current_user.role in ['admin', 'engineer'] %}
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                Управление заявкой
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <input type="hidden" name="action" value="update_ticket">
+
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Статус</label>
+                        <select name="status" id="status" class="form-select">
+                            {% for status in STATUSES %}
+                                <option value="{{ status }}" {% if ticket.status == status %}selected{% endif %}>
+                                    {{ status }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="assigned_to_id" class="form-label">Назначить исполнителя</label>
+                        <select name="assigned_to_id" id="assigned_to_id" class="form-select">
+                            <option value="">Не назначен</option>
+                            {% for u in eligible_users %}
+                                <option value="{{ u.id }}" {% if ticket.assigned_to_id == u.id %}selected{% endif %}>
+                                    {{ u.username }} ({{ u.role }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-success">Сохранить изменения</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        Добавить комментарий
+    </div>
+    <div class="card-body">
+        <form method="post">
+            <input type="hidden" name="action" value="add_comment">
+
+            <div class="mb-3">
+                <label for="content" class="form-label">Комментарий</label>
+                <textarea name="content" id="content" rows="4" class="form-control" required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Добавить комментарий</button>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        Комментарии
+    </div>
+    <div class="card-body">
+        {% if comments %}
+            {% for comment in comments %}
+                <div class="border rounded p-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong>{{ comment.user.username }}</strong>
+                        {% if comment.created_at %}
+                            <small class="text-muted">{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="mt-2">{{ comment.text }}</div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted mb-0">Комментариев пока нет.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
