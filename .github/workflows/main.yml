@@ -18,14 +18,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         shell: powershell
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller pywebview
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller pywebview flask
 
       - name: Create .env
         shell: powershell
@@ -44,13 +44,15 @@ jobs:
           MAIL_PASSWORD=f7a7bfb8db16ac
           MAIL_DEFAULT_SENDER=service-desk@mycompany.com
           "@ | Set-Content -Path .env -Encoding UTF8
-      - name: Build exe
+
+      - name: Build exe from main.py
         shell: powershell
         run: |
-          pyinstaller --noconfirm --windowed --onedir --name ServiceDesk `
+          python -m PyInstaller --noconfirm --windowed --onedir --name ServiceDesk `
+            --hidden-import flask `
             --add-data "templates;templates" `
             --add-data "static;static" `
-            app.py
+            main.py
 
       - name: Prepare release folder
         shell: powershell
