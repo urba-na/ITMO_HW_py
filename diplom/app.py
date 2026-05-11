@@ -5,9 +5,15 @@ from config import (
     SQLALCHEMY_DATABASE_URI,
     SQLALCHEMY_TRACK_MODIFICATIONS,
     DEFAULT_ADMIN_USERNAME,
-    DEFAULT_ADMIN_PASSWORD
-)
-from extensions import db, login_manager
+    DEFAULT_ADMIN_PASSWORD,
+    MAIL_SERVER,
+    MAIL_PORT,
+    MAIL_USE_TLS,
+    MAIL_USE_SSL,
+    MAIL_USERNAME,
+    MAIL_PASSWORD,
+    MAIL_DEFAULT_SENDER)
+from extensions import db, login_manager, mail
 from models import User
 from routes import init_routes
 
@@ -21,7 +27,7 @@ def ensure_admin_exists():
     else:
         user = User(
             username=DEFAULT_ADMIN_USERNAME,
-            email='admin@mycompany.com',
+            email=MAIL_DEFAULT_SENDER,
             password=generate_password_hash(DEFAULT_ADMIN_PASSWORD),
             role='admin',
             is_approved=True
@@ -36,9 +42,18 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
 
+    app.config['MAIL_SERVER'] = MAIL_SERVER
+    app.config['MAIL_PORT'] = MAIL_PORT
+    app.config['MAIL_USE_TLS'] = MAIL_USE_TLS
+    app.config['MAIL_USE_SSL'] = MAIL_USE_SSL
+    app.config['MAIL_USERNAME'] = MAIL_USERNAME
+    app.config['MAIL_PASSWORD'] = MAIL_PASSWORD
+    app.config['MAIL_DEFAULT_SENDER'] = MAIL_DEFAULT_SENDER
+
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'login'
+    mail.init_app(app)
 
     with app.app_context():
         db.create_all()
