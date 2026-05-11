@@ -16,7 +16,8 @@
 - контроль сроков обработки заявок (SLA);
 - ведение журнала изменений;
 - фильтрация и сортировка заявок;
-- административное управление пользователями.
+- e‑mail‑уведомления при регистрации и изменении статуса заявки (через тестовый SMTP‑сервис Mailtrap);
+- административное управление пользователями (роль, подтверждение, сброс пароля, редактирование e‑mail).
 
 ## Технологии
 
@@ -25,26 +26,13 @@
 - Python 3
 - Flask
 - Flask-Login
+- Flask-Mail
 - Flask-SQLAlchemy
 - SQLAlchemy
 - SQLite
 - python-dotenv
 - Bootstrap 5
 - Jinja2
+- Mailtrap (Email Sandbox для тестовой отправки писем)
 
 Полный список зависимостей и используемых версий приведён в файле `requirements.txt`.
-
-## Структура проекта
-
-```text
-.
-├── app.py
-├── config.py
-├── routes.py
-├── models.py
-├── extensions.py
-├── templates/
-├── static/
-├── instance/
-├── README.md
-└── requirements.txt
