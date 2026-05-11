@@ -21,7 +21,23 @@
         <tr>
             <td>{{ u.id }}</td>
             <td>{{ u.username }}</td>
-            <td>{{ u.email }}</td>
+
+            <td>
+                <form method="post" class="d-flex gap-1 m-0">
+                    <input type="hidden" name="action" value="update_email">
+                    <input type="hidden" name="user_id" value="{{ u.id }}">
+                    <input type="email"
+                           name="email"
+                           value="{{ u.email }}"
+                           class="form-control form-control-sm"
+                           style="min-width: 220px;">
+                    <button type="submit"
+                            class="btn btn-sm btn-outline-primary">
+                        ✓
+                    </button>
+                </form>
+            </td>
+
             <td>{{ u.role }}</td>
             <td>{{ 'Да' if u.is_approved else 'Нет' }}</td>
 
@@ -29,7 +45,7 @@
                 {% if u.username == 'admin' %}
                     <span class="text-muted small">Защищено</span>
                 {% else %}
-                    <form method="post">
+                    <form method="post" class="m-0">
                         <input type="hidden" name="action" value="update_role">
                         <input type="hidden" name="user_id" value="{{ u.id }}">
                         <select name="role" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -45,7 +61,7 @@
                 {% if u.username == 'admin' %}
                     <span class="text-muted small">Защищено</span>
                 {% else %}
-                    <form method="post" class="form-check form-switch">
+                    <form method="post" class="form-check form-switch m-0">
                         <input type="hidden" name="action" value="update_approval">
                         <input type="hidden" name="user_id" value="{{ u.id }}">
                         <input class="form-check-input" type="checkbox" name="is_approved" value="1"
