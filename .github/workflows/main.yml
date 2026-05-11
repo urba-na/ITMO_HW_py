@@ -7,6 +7,10 @@ jobs:
   build:
     runs-on: windows-latest
 
+    defaults:
+      run:
+        working-directory: diplom
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,16 +27,10 @@ jobs:
           pip install pyinstaller pywebview
 
       - name: Build app
-        run: |
-          pyinstaller --noconfirm --windowed --onedir ^
-            --name ServiceDesk ^
-            --add-data "templates;templates" ^
-            --add-data "static;static" ^
-            --add-data "instance;instance" ^
-            main.py
+        run: python -m PyInstaller --noconfirm --windowed --onedir --name ServiceDesk --add-data "templates;templates" --add-data "static;static" --add-data "instance;instance" main.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ServiceDesk-Windows
-          path: dist/ServiceDesk
+          path: diplom/dist/ServiceDesk
