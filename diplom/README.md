@@ -16,8 +16,8 @@
 - контроль сроков обработки заявок (SLA);
 - ведение журнала изменений;
 - фильтрация и сортировка заявок;
-- email-уведомления при регистрации и изменении статуса заявки;
-- административное управление пользователями (роль, подтверждение, сброс пароля, редактирование email).
+- e‑mail‑уведомления при регистрации и изменении статуса заявки (через тестовый SMTP‑сервис Mailtrap);
+- административное управление пользователями (роль, подтверждение, сброс пароля, редактирование e‑mail).
 
 ## Технологии
 
@@ -33,6 +33,7 @@
 - python-dotenv
 - Bootstrap 5
 - Jinja2
+- Mailtrap (Email Sandbox для тестовой отправки писем)
 
 Полный список зависимостей и используемых версий приведён в файле `requirements.txt`.
 
@@ -42,21 +43,26 @@
 ```bash
 git clone https://github.com/urba-na/ITMO_HW_py.git
 cd ITMO_HW_py/diplom
-
+```
 ### 2. Создание виртуального окружения
 macOS / Linux
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
-
+```
 Windows
+```bash
 python -m venv .venv
 .venv\Scripts\activate
-
+```
 ### 3. Установка зависимостей
+```bash
 pip install -r requirements.txt
-
+```
 ### 4. Настройка переменных окружения
+
 Создайте файл  .env  в корневой папке проекта и укажите необходимые параметры, например:
+
 SECRET_KEY=your_secret_key
 DEFAULT_ADMIN_USERNAME=admin
 DEFAULT_ADMIN_PASSWORD=admin123
@@ -70,8 +76,9 @@ MAIL_USE_SSL=False
 MAIL_DEFAULT_SENDER=no-reply@example.com
 
 ### 5. Запуск приложения
+```bash
 python3 app.py / python app.py
-
+```
 После запуска приложение будет доступно по адресу:
 http://127.0.0.1:5000
 
