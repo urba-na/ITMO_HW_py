@@ -1,15 +1,82 @@
-from datetime import datetime
-
+from datetime import datetime, timedelta
 from flask import render_template, request, redirect, url_for, abort, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import aliased
 from functools import wraps
+from flask_mail import Message
+from flask import current_app
+import smtplib
 
 from config import DEFAULT_USER_PASSWORD, DEFAULT_ADMIN_USERNAME
-from extensions import db
-from models import User, Ticket, Comment, TicketHistory, SLA, CATEGORIES, PRIORITIES, STATUSES
+from extensions import db, mail
+from models import User, Ticket, Comment, TicketHistory, SLA, CATEGORIES, PRIORITIES, STATUSES, now_msk
 
+def send_email(subject, recipients, body):
+    if not recipients:
+        return False
+
+    try:
+        msg = Message(subject=subject, recipients=recipients)
+        msg.body = body
+        mail.send(msg)
+        return True
+    except Exception as e:
+        current_app.logger.error(f"Не удалось отправить e-mail: {e}")
+        return False
+
+def send_registration_email(user: User):
+    subject = 'Регистрация в системе Service Desk'
+    body = (
+        f'Здравствуйте, {user.username}!\n\n'
+        'Ваша регистрация в системе Service Desk успешно выполнена.\n'
+        'После подтверждения администратором вы сможете входить в систему '
+        'и работать с заявками.\n\n'
+        'С уважением,\nСлужба поддержки'
+    )
+    send_email(subject, [user.email], body)
+
+def send_ticket_status_email(ticket: Ticket, old_status: str, new_status: str):
+    if not ticket.author or not ticket.author.email:
+        return
+
+    subject = f'Статус вашей заявки #{ticket.id} изменён'
+    body = (
+        f'Здравствуйте, {ticket.author.username}!\n\n'
+        f'Статус вашей заявки "{ticket.title}" был изменён '
+        f'с "{old_status or "не указан"}" на "{new_status}".\n\n'
+        'Вы можете увидеть подробности в Service Desk.\n\n'
+        'С уважением,\nСлужба поддержки'
+    )
+    send_email(subject, [ticket.author.email], body)
+
+def auto_close_resolved_tickets():
+    threshold = now_msk() - timedelta(days=3)
+
+    tickets_to_close = Ticket.query.filter(
+        Ticket.status == 'Решена',
+        Ticket.resolved_at.isnot(None),
+        Ticket.resolved_at <= threshold
+    ).all()
+
+    changed = False
+
+    for ticket in tickets_to_close:
+        old_status = ticket.status
+        ticket.status = 'Закрыта'
+
+        db.session.add(TicketHistory(
+            ticket_id=ticket.id,
+            field='status',
+            old_value=old_status,
+            new_value='Закрыта',
+            changed_by_id=ticket.author_id
+        ))
+
+        changed = True
+
+    if changed:
+        db.session.commit()
 
 def role_required(*roles):
     def decorator(func):
@@ -22,7 +89,6 @@ def role_required(*roles):
             return func(*args, **kwargs)
         return wrapper
     return decorator
-
 
 def init_routes(app):
 
@@ -59,6 +125,8 @@ def init_routes(app):
             db.session.add(user)
             db.session.commit()
 
+            send_registration_email(user)
+
             flash('Регистрация отправлена. Ожидайте подтверждения администратором.', 'success')
             return redirect(url_for('login'))
 
@@ -89,6 +157,7 @@ def init_routes(app):
     @app.route('/dashboard')
     @login_required
     def dashboard():
+        auto_close_resolved_tickets()
         author_alias = aliased(User)
         assignee_alias = aliased(User)
 
@@ -221,6 +290,7 @@ def init_routes(app):
     @app.route('/tickets/<int:ticket_id>', methods=['GET', 'POST'])
     @login_required
     def ticket_detail(ticket_id):
+        auto_close_resolved_tickets()
         ticket = Ticket.query.get_or_404(ticket_id)
 
         if current_user.role == 'user' and ticket.author_id != current_user.id:
@@ -235,20 +305,37 @@ def init_routes(app):
             action = request.form.get('action')
 
             if action == 'add_comment':
+                if ticket.status == 'Закрыта':
+                    flash('Нельзя добавлять комментарии в закрытую заявку.', 'warning')
+                    return redirect(url_for('ticket_detail', ticket_id=ticket.id))
+
                 content = request.form.get('content', '').strip()
 
-                if content:
-                    comment = Comment(
-                        text=content,
-                        ticket_id=ticket.id,
-                        user_id=current_user.id
-                    )
-                    db.session.add(comment)
-                    db.session.commit()
-                    flash('Комментарий добавлен.', 'success')
-                else:
+                if not content:
                     flash('Комментарий не может быть пустым.', 'warning')
+                    return redirect(url_for('ticket_detail', ticket_id=ticket.id))
 
+                if ticket.status == 'Решена':
+                    old_status = ticket.status
+                    ticket.status = 'В работе'
+
+                    db.session.add(TicketHistory(
+                        ticket_id=ticket.id,
+                        field='status',
+                        old_value=old_status,
+                        new_value='В работе',
+                        changed_by_id=current_user.id
+                    ))
+
+                comment = Comment(
+                    text=content,
+                    ticket_id=ticket.id,
+                    user_id=current_user.id
+                )
+                db.session.add(comment)
+                db.session.commit()
+
+                flash('Комментарий добавлен.', 'success')
                 return redirect(url_for('ticket_detail', ticket_id=ticket.id))
 
             elif action == 'update_ticket':
@@ -257,9 +344,12 @@ def init_routes(app):
                     return redirect(url_for('ticket_detail', ticket_id=ticket.id))
 
                 old_status = ticket.status
+                old_priority = ticket.priority
                 old_assigned_to_id = ticket.assigned_to_id
+                old_sla_id = ticket.sla_id
 
                 new_status = request.form.get('status')
+                new_priority = request.form.get('priority')
                 assigned_to_id = request.form.get('assigned_to_id')
 
                 if new_status and new_status != ticket.status:
@@ -272,6 +362,34 @@ def init_routes(app):
                         new_value=new_status,
                         changed_by_id=current_user.id
                     ))
+
+                if new_priority and new_priority != ticket.priority:
+                    ticket.priority = new_priority
+
+                    db.session.add(TicketHistory(
+                        ticket_id=ticket.id,
+                        field='priority',
+                        old_value=old_priority or '',
+                        new_value=new_priority,
+                        changed_by_id=current_user.id
+                    ))
+
+                    new_sla = SLA.query.filter_by(priority=new_priority, is_active=True) \
+                        .order_by(SLA.resolution_hours.asc()) \
+                        .first()
+
+                    ticket.sla_id = new_sla.id if new_sla else None
+
+                    if old_sla_id != ticket.sla_id:
+                        old_sla = SLA.query.get(old_sla_id) if old_sla_id else None
+
+                        db.session.add(TicketHistory(
+                            ticket_id=ticket.id,
+                            field='sla',
+                            old_value=old_sla.name if old_sla else '',
+                            new_value=new_sla.name if new_sla else '',
+                            changed_by_id=current_user.id
+                        ))
 
                 if assigned_to_id:
                     new_assigned_to_id = int(assigned_to_id)
@@ -292,13 +410,20 @@ def init_routes(app):
                         changed_by_id=current_user.id
                     ))
 
-                if ticket.status in ['Решена', 'Закрыта']:
+                if ticket.status == 'Решена':
                     if not ticket.resolved_at:
-                        ticket.resolved_at = datetime.utcnow()
+                        ticket.resolved_at = now_msk()
+                elif ticket.status == 'Закрыта':
+                    if not ticket.resolved_at:
+                        ticket.resolved_at = now_msk()
                 else:
                     ticket.resolved_at = None
 
                 db.session.commit()
+
+                if new_status and new_status != old_status:
+                    send_ticket_status_email(ticket, old_status, new_status)
+
                 flash('Заявка обновлена.', 'success')
                 return redirect(url_for('ticket_detail', ticket_id=ticket.id))
 
@@ -308,7 +433,8 @@ def init_routes(app):
             comments=comments,
             history=history,
             eligible_users=eligible_users,
-            STATUSES=STATUSES
+            STATUSES=STATUSES,
+            PRIORITIES=PRIORITIES
         )
 
     @app.route('/users', methods=['GET', 'POST'])
@@ -346,6 +472,28 @@ def init_routes(app):
                     else:
                         flash(f'Доступ пользователю {user_obj.username} отключён.', 'warning')
 
+                return redirect(url_for('users_list'))
+
+            elif action == 'update_email':
+                new_email = request.form.get('email', '').strip().lower()
+
+                if not new_email:
+                    flash('Email не может быть пустым.', 'warning')
+                    return redirect(url_for('users_list'))
+
+                # проверяем, что такой email не используется другим пользователем
+                existing = User.query.filter(
+                    User.email == new_email,
+                    User.id != user_obj.id
+                ).first()
+
+                if existing:
+                    flash('Пользователь с таким email уже существует.', 'warning')
+                    return redirect(url_for('users_list'))
+
+                user_obj.email = new_email
+                db.session.commit()
+                flash(f'Email пользователя {user_obj.username} обновлён.', 'success')
                 return redirect(url_for('users_list'))
 
             elif action == 'reset_password':
