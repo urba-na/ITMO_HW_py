@@ -27,10 +27,18 @@ jobs:
         shell: powershell
         run: |
           @"
-          SECRET_KEY=${{ secrets.SECRET_KEY }}
-          DEFAULT_ADMIN_USERNAME=${{ secrets.DEFAULT_ADMIN_USERNAME }}
-          DEFAULT_ADMIN_PASSWORD=${{ secrets.DEFAULT_ADMIN_PASSWORD }}
-          DEFAULT_ADMIN_EMAIL=${{ secrets.DEFAULT_ADMIN_EMAIL }}
+          SECRET_KEY=nNAPkY135_+}&1ndp8I[D)J0<goYeS4
+          DATABASE_URL=sqlite:///service_desk.db
+          DEFAULT_ADMIN_USERNAME=admin
+          DEFAULT_ADMIN_PASSWORD=12345
+          DEFAULT_USER_PASSWORD=000000
+          MAIL_SERVER=sandbox.smtp.mailtrap.io
+          MAIL_PO  RT=587
+          MAIL_USE_TLS=true
+          MAIL_USE_SSL=false
+          MAIL_USERNAME=0da57137ac6f0c
+          MAIL_PASSWORD=f7a7bfb8db16ac
+          MAIL_DEFAULT_SENDER=service-desk@mycompany.com
           "@ | Set-Content -Path .env -Encoding UTF8
 
       - name: Build exe
