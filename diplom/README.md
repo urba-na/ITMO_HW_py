@@ -84,3 +84,6 @@ http://127.0.0.1:5000
 
 Также для запуска из под Windows подготовлен exe файл - 
 Архив ServiceDesk-Windows.zip
+
+Дополнительно веб-приложение размещено на демо ресурсе: 
+https://urba8na.pythonanywhere.com
