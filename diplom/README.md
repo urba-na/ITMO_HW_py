@@ -83,4 +83,4 @@ python3 app.py / python app.py
 http://127.0.0.1:5000
 
 Также для запуска из под Windows подготовлен exe файл - 
-Архив ServiceDeskWindows
+Архив ServiceDesk-Windows.zip
