@@ -40,11 +40,9 @@ class User(db.Model, UserMixin):
     def is_active(self):
         return self.is_approved
 
-
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
 
 class SLA(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -60,7 +58,6 @@ class SLA(db.Model):
     def __repr__(self):
         return f'<SLA {self.name}>'
 
-
 class TicketHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=False)
@@ -72,7 +69,6 @@ class TicketHistory(db.Model):
 
     ticket = db.relationship('Ticket', backref='history')
     user = db.relationship('User')
-
 
 class Ticket(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -92,8 +88,7 @@ class Ticket(db.Model):
         'Comment',
         backref='ticket',
         lazy=True,
-        cascade='all, delete-orphan'
-    )
+        cascade='all, delete-orphan')
 
     @property
     def resolution_deadline(self):
@@ -104,6 +99,10 @@ class Ticket(db.Model):
     @property
     def is_resolved(self):
         return self.status in ['Решена', 'Закрыта']
+
+    @property
+    def is_closed(self):
+        return self.status == 'Закрыта'
 
     @property
     def is_overdue(self):
