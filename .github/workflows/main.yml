@@ -1,36 +1,71 @@
-name: Build Windows EXE
+name: Build Windows ServiceDesk
 
 on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
 
-    defaults:
-      run:
-        working-directory: diplom
-
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Install dependencies
+        shell: powershell
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller pywebview
 
-      - name: Build app
-        run: python -m PyInstaller --noconfirm --windowed --onedir --name ServiceDesk --add-data "templates;templates" --add-data "static;static" main.py
+      - name: Create .env
+        shell: powershell
+        run: |
+          @"
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          DEFAULT_ADMIN_USERNAME=${{ secrets.DEFAULT_ADMIN_USERNAME }}
+          DEFAULT_ADMIN_PASSWORD=${{ secrets.DEFAULT_ADMIN_PASSWORD }}
+          DEFAULT_ADMIN_EMAIL=${{ secrets.DEFAULT_ADMIN_EMAIL }}
+          "@ | Set-Content -Path .env -Encoding UTF8
+
+      - name: Build exe
+        shell: powershell
+        run: |
+          pyinstaller --noconfirm --windowed --onedir --name ServiceDesk `
+            --add-data "templates;templates" `
+            --add-data "static;static" `
+            main.py
+
+      - name: Prepare release folder
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path release\ServiceDesk | Out-Null
+          Copy-Item dist\ServiceDesk\ServiceDesk.exe release\ServiceDesk\
+          Copy-Item dist\ServiceDesk\_internal release\ServiceDesk\_internal -Recurse
+          Copy-Item .env release\ServiceDesk\.env
+
+      - name: Add run instruction
+        shell: powershell
+        run: |
+          @"
+          Для запуска:
+          1. Распакуйте архив полностью в отдельную папку.
+          2. Не удаляйте папку _internal и файл .env.
+          3. Запустите ServiceDesk.exe двойным щелчком.
+          "@ | Set-Content -Path release\ServiceDesk\README.txt -Encoding UTF8
+
+      - name: Create zip
+        shell: powershell
+        run: |
+          Compress-Archive -Path release\ServiceDesk -DestinationPath release\ServiceDesk-Windows.zip -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ServiceDesk-Windows
-          path: diplom/dist/ServiceDesk
+          path: release/ServiceDesk-Windows.zip
