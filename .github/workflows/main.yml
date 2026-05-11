@@ -27,7 +27,7 @@ jobs:
           pip install pyinstaller pywebview
 
       - name: Build app
-        run: python -m PyInstaller --noconfirm --windowed --onedir --name ServiceDesk --add-data "templates;templates" --add-data "static;static" --add-data "instance;instance" main.py
+        run: python -m PyInstaller --noconfirm --windowed --onedir --name ServiceDesk --add-data "templates;templates" --add-data "static;static" main.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
