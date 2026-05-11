@@ -7,6 +7,10 @@ jobs:
   build-windows:
     runs-on: windows-latest
 
+    defaults:
+      run:
+        working-directory: diplom
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,21 +37,20 @@ jobs:
           DEFAULT_ADMIN_PASSWORD=12345
           DEFAULT_USER_PASSWORD=000000
           MAIL_SERVER=sandbox.smtp.mailtrap.io
-          MAIL_PO  RT=587
+          MAIL_PORT=587
           MAIL_USE_TLS=true
           MAIL_USE_SSL=false
           MAIL_USERNAME=0da57137ac6f0c
           MAIL_PASSWORD=f7a7bfb8db16ac
           MAIL_DEFAULT_SENDER=service-desk@mycompany.com
           "@ | Set-Content -Path .env -Encoding UTF8
-
       - name: Build exe
         shell: powershell
         run: |
           pyinstaller --noconfirm --windowed --onedir --name ServiceDesk `
             --add-data "templates;templates" `
             --add-data "static;static" `
-            main.py
+            app.py
 
       - name: Prepare release folder
         shell: powershell
@@ -76,4 +79,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ServiceDesk-Windows
-          path: release/ServiceDesk-Windows.zip
+          path: diplom/release/ServiceDesk-Windows.zip
