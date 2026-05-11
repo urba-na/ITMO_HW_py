@@ -11,6 +11,20 @@ jobs:
       run:
         working-directory: diplom
 
+    env:
+      SECRET_KEY: nNAPkY135_+}&1ndp8I[D)J0<goYeS4
+      DATABASE_URL: sqlite:///service_desk.db
+      DEFAULT_ADMIN_USERNAME: admin
+      DEFAULT_ADMIN_PASSWORD: 12345
+      DEFAULT_USER_PASSWORD: 000000
+      MAIL_SERVER: sandbox.smtp.mailtrap.io
+      MAIL_PORT: 587
+      MAIL_USE_TLS: true
+      MAIL_USE_SSL: false
+      MAIL_USERNAME: 0da57137ac6f0c
+      MAIL_PASSWORD: f7a7bfb8db16ac
+      MAIL_DEFAULT_SENDER: service-desk@mycompany.com
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,19 +45,19 @@ jobs:
         shell: powershell
         run: |
           @"
-          SECRET_KEY=nNAPkY135_+}&1ndp8I[D)J0<goYeS4
-          DATABASE_URL=sqlite:///service_desk.db
-          DEFAULT_ADMIN_USERNAME=admin
-          DEFAULT_ADMIN_PASSWORD=12345
-          DEFAULT_USER_PASSWORD=000000
-          MAIL_SERVER=sandbox.smtp.mailtrap.io
-          MAIL_PORT=587
-          MAIL_USE_TLS=true
-          MAIL_USE_SSL=false
-          MAIL_USERNAME=0da57137ac6f0c
-          MAIL_PASSWORD=f7a7bfb8db16ac
-          MAIL_DEFAULT_SENDER=service-desk@mycompany.com
-          "@ | Set-Content -Path .env -Encoding UTF8
+          SECRET_KEY=$env:SECRET_KEY
+          DATABASE_URL=$env:DATABASE_URL
+          DEFAULT_ADMIN_USERNAME=$env:DEFAULT_ADMIN_USERNAME
+          DEFAULT_ADMIN_PASSWORD=$env:DEFAULT_ADMIN_PASSWORD
+          DEFAULT_USER_PASSWORD=$env:DEFAULT_USER_PASSWORD
+          MAIL_SERVER=$env:MAIL_SERVER
+          MAIL_PORT=$env:MAIL_PORT
+          MAIL_USE_TLS=$env:MAIL_USE_TLS
+          MAIL_USE_SSL=$env:MAIL_USE_SSL
+          MAIL_USERNAME=$env:MAIL_USERNAME
+          MAIL_PASSWORD=$env:MAIL_PASSWORD
+          MAIL_DEFAULT_SENDER=$env:MAIL_DEFAULT_SENDER
+          "@ | Set-Content -Path .env
 
       - name: Build exe from main.py
         shell: powershell
@@ -81,7 +95,7 @@ jobs:
           1. Распакуйте архив полностью в отдельную папку.
           2. Не удаляйте папку _internal и файл .env.
           3. Запустите ServiceDesk.exe двойным щелчком.
-          "@ | Set-Content -Path release\ServiceDesk\README.txt -Encoding UTF8
+          "@ | Set-Content -Path release\ServiceDesk\README.txt
 
       - name: Create zip
         shell: powershell
