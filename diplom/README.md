@@ -84,17 +84,3 @@ http://127.0.0.1:5000
 
 Также для запуска из под Windows подготовлен exe файл
 Архив ServiceDeskWindows
-
-## Структура проекта
-.
-├── app.py
-├── main.py (для exe)
-├── config.py
-├── extensions.py
-├── models.py
-├── routes.py
-├── requirements.txt
-├── templates/
-├── static/
-└── README.md
-
